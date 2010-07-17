@@ -4,7 +4,6 @@ import (
 	"flag"
 	"net"
 	"fmt"
-	"io/ioutil"
 )
 
 var (
@@ -28,7 +27,7 @@ func main() {
 		fmt.Print("Starting up...\n")
 		fmt.Print("Binding to " + *bind_to + "...\n")
 		
-		server,err := net.Listen("tcp4", *bind_to)
+		server,err := net.Listen("tcp", *bind_to)
 		checkErr("Unable to bind:", err)
 		defer server.Close()
 		
@@ -40,18 +39,25 @@ func main() {
 		}
 		
 		var conn net.Conn
-		var raw_json []byte
 		fmt.Print("Listening for connections on " + *bind_to + "...\n")
 		
-		finished := false // to be used in the future for a clean dismount
-		for finished != true {
-			conn, err = server.Accept();
-			checkErr("Problem accepting:", err)
-			
-			raw_json,err = ioutil.ReadAll(conn)
-			checkErr("Problem reading connection buffer:", err)
-			fmt.Println("Received JSON data:\n",string(raw_json))
-			parseVerbs(raw_json)
+		// start accepting
+		conn, err = server.Accept()
+		checkErr("Problem accepting:", err)
+		for {
+			response,eot := doReading(conn)
+			// if transmission has not yet ended
+			if !eot {
+				fmt.Println(response)
+				// send response to client
+				conn.Write([]byte(response))
+			} else {
+				// restart the connection; the client has disconnected
+				conn.Close()
+				conn,err = server.Accept()
+				checkErr("Problem accepting:", err)
+			}
 		}
 	}
 }
+

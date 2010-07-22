@@ -1,25 +1,5 @@
 package main
 
-/*
-Verbs (global vars to follow):
--Player
-	look <direction>
-	move <direction>
-	attack <direction>
-	loot
-	drop <inventory id>
-	equip <inventory id>
-	unequip <inventory id>
-
--Director
-	shutdown
-	restart
-	
--Account
-	create <agility> <intelligence> <strength> <name>
-	delete <name>
-*/
-
 import (
 	"json"
 	"io"
@@ -40,7 +20,6 @@ type ServerVerb struct {
 	Parameter string
 }
 
-// constants that define verbs
 const (
 	// verb types
 	PVERB = iota
@@ -84,6 +63,15 @@ func handleUserVerb(uverb *UserVerb) string {
 	return "FAIL:UNKNOWNUSERVERB"
 }
 
+func handlePlayerVerb(pverb *PlayerVerb) string {
+	switch pverb.Verb {
+	//verb GO triggers node.event_callback()
+	//verb LOOK returns an array of possible doors
+	default: return "OK:PLAYERVERBS:Not implemented"
+	}
+	return "FAIL:UNKNOWNPLAYERVERB"
+}
+
 // Gets all the appropriate data from the client and returns a status message
 func doReading(conn io.ReadWriteCloser) (string,bool) {
 	// by definition, we expect a simple header defined as:
@@ -106,10 +94,8 @@ func doReading(conn io.ReadWriteCloser) (string,bool) {
 		pverb := new(PlayerVerb)
 		err := json.Unmarshal(raw_json, &pverb)
 		checkErr("Unable to decode PlayerVerb:", err)
-		// return handlePlayerVerb(pverb)
-		_ = pverb
-		return "OK:PLAYERVERB",false
-	
+		return handlePlayerVerb(pverb),false
+		
 	case SVERB:
 		sverb := new(ServerVerb)
 		err := json.Unmarshal(raw_json, &sverb)

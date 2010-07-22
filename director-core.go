@@ -19,27 +19,31 @@ func main() {
 	
 	if *safe_mode {
 		// safe mode init
-		fmt.Print("Starting up in safe mode...\n")
-		fmt.Print("Binding to safe localhost:7000...\n")
-		fmt.Print("Generating random encounters...\n")
+		fmt.Println("Starting up in safe mode...")
+		fmt.Println("Binding to safe localhost:7000...")
+		fmt.Println("Generating random encounters...")
 	} else {
 		// normal init
-		fmt.Print("Starting up...\n")
-		fmt.Print("Binding to " + *bind_to + "...\n")
+		fmt.Println("Starting up...")
+		fmt.Println("Binding to " + *bind_to + "...")
 		
 		server,err := net.Listen("tcp", *bind_to)
 		checkErr("Unable to bind:", err)
 		defer server.Close()
 		
+		fmt.Println("Generating dungeon...")
+		entrance := mazeGenerateExitPath()
+		mazeGenerateExtraPaths(entrance, 0)
+		
 		if *rand_enc_on_roll {
-			fmt.Print("Random encounters to be generated on each roll; " +
-				"skipping...\n")
+			fmt.Println("Random encounters to be generated on each roll; " +
+				"skipping...")
 		} else {
-			fmt.Print("Generating random encounters...\n")
+			fmt.Println("Generating random encounters...")
 		}
 		
 		var conn net.Conn
-		fmt.Print("Listening for connections on " + *bind_to + "...\n")
+		fmt.Println("Ready!")
 		
 		// start accepting
 		conn, err = server.Accept()

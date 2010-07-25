@@ -63,17 +63,20 @@ func handleUserVerb(uverb *UserVerb) string {
 	return "FAIL:UNKNOWNUSERVERB"
 }
 
-func handlePlayerVerb(pverb *PlayerVerb) string {
+func handlePlayerVerb(pverb *PlayerVerb, node *mazeNode) []string {
 	switch pverb.Verb {
 	//verb GO triggers node.event_callback()
 	//verb LOOK returns an array of possible doors
-	default: return "OK:PLAYERVERBS:Not implemented"
+	case PVERB_LOOK:
+		return mazeListDoors(node)
+	default:
+		return []string{"OK:PLAYERVERBS:Not implemented"}
 	}
-	return "FAIL:UNKNOWNPLAYERVERB"
+	return []string{"FAIL:UNKNOWNPLAYERVERB"}
 }
 
 // Gets all the appropriate data from the client and returns a status message
-func doReading(conn io.ReadWriteCloser) (string,bool) {
+func doReading(conn io.ReadWriteCloser, node *mazeNode) (string,bool) {
 	// by definition, we expect a simple header defined as:
 	header := make([]byte, 2) // [0] = verb type, [1] = ENCODED verb size
 	_,err := conn.Read(header)
@@ -94,7 +97,10 @@ func doReading(conn io.ReadWriteCloser) (string,bool) {
 		pverb := new(PlayerVerb)
 		err := json.Unmarshal(raw_json, &pverb)
 		checkErr("Unable to decode PlayerVerb:", err)
-		return handlePlayerVerb(pverb),false
+		response := handlePlayerVerb(pverb, node)
+		response_json,err := json.Marshal(&response)
+		checkErr("Unable to encode response:", err)
+		return string(response_json),false
 		
 	case SVERB:
 		sverb := new(ServerVerb)

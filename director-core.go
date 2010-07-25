@@ -49,7 +49,7 @@ func main() {
 		conn, err = server.Accept()
 		checkErr("Problem accepting:", err)
 		for {
-			response,eot := doReading(conn)
+			response,eot := doReading(conn,entrance)
 			// if transmission has not yet ended
 			if !eot {
 				fmt.Println(response)

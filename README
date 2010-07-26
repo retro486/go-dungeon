@@ -4,3 +4,4 @@
   * Have verbs accept commands from STDIN rather than the command-line
   * Verbs return JSON-encoded strings and so to display must be piped into
     show-message to decode the JSON and print the string.
+  * Recover from recoverable errors without taking the director down.

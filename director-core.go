@@ -32,25 +32,30 @@ func main() {
 		defer server.Close()
 		
 		fmt.Println("Generating dungeon...")
-		entrance := mazeGenerateExitPath()
-		mazeGenerateExtraPaths(entrance, 0)
+		node := mazeGenerateExitPath()
+		mazeGenerateExtraPaths(node, 0)
 		
 		if *rand_enc_on_roll {
 			fmt.Println("Random encounters to be generated on each roll; " +
 				"skipping...")
 		} else {
 			fmt.Println("Generating random encounters...")
+			//TODO
 		}
 		
 		var conn net.Conn
 		fmt.Println("Ready!")
 		
 		// start accepting
+		var response string
+		var eot bool
+		
 		conn, err = server.Accept()
 		checkErr("Problem accepting:", err)
 		for {
-			response,eot := doReading(conn,entrance)
+			response,eot,node = doReading(conn,node)
 			// if transmission has not yet ended
+			_ = node // stop go from stupidly complaining that node is never used.
 			if !eot {
 				fmt.Println(response)
 				// send response to client

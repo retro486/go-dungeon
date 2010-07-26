@@ -32,9 +32,9 @@ const (
 )
 
 type mazeNode struct {
-	event_callback func() bool
+	event_callback func() (string,bool)
 	doors []*mazeNode
-	parent *mazeNode // for "backtracking"
+	parent *mazeNode // for more intuitive reference; no real reason it couldn't be doors[0].
 	name string
 	event_ran bool
 }
@@ -103,7 +103,7 @@ func mazeGenerateExitPath() *mazeNode {
 	for i := 0; i < MAZE_MAX_DEPTH; i++ {
 		node,err = createDoor(node)
 		checkErr("Unable to add a door:", err)
-		node.name = mazeGenerateRandomName() // for debug
+		node.name = mazeGenerateRandomName()
 	}
 	
 	node.event_callback = onExit
@@ -139,6 +139,29 @@ func randomNumber(max_range uint32) uint32 {
 	return (rnd.Uint32() % max_range)
 }
 
-// TODO:
-// func mixMenuItems(menu []string) []string;
+func randomNumberBetween(low uint32, high uint32) uint32 {
+	var num uint32
+	for num = randomNumber(high); num < low && num > high; num = randomNumber(high){}
+	return num
+}
+
+// scrambles the given string array of doors; if skip_first is set, it won't scramble the
+// first door (i.e., to ensure the first door is always "go to previous room")
+func mixMenuItems(menu []string, skip_first bool) []string {
+	max_len := len(menu)
+
+	for i := 0; i < max_len; i++ {
+		rand_index := int(randomNumberBetween(uint32(i), uint32(max_len)))
+		// TODO this isn't working or something...
+		if skip_first && (i == 0 || rand_index == 0) {
+			continue
+		} else {
+			temp := menu[i]
+			menu[i] = menu[rand_index]
+			menu[rand_index] = temp
+		}
+	}
+	
+	return menu
+}
 

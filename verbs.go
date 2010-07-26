@@ -3,6 +3,7 @@ package main
 import (
 	"json"
 	"io"
+	"strconv"
 )
 
 // Various general verbs; be sure to test what verb type is stored as not all
@@ -63,20 +64,34 @@ func handleUserVerb(uverb *UserVerb) string {
 	return "FAIL:UNKNOWNUSERVERB"
 }
 
-func handlePlayerVerb(pverb *PlayerVerb, node *mazeNode) []string {
+//TODO require the ADDRESS of the node pointer so that changes to the node can be done.
+func handlePlayerVerb(pverb *PlayerVerb, node *mazeNode) ([]string,*mazeNode) {
 	switch pverb.Verb {
-	//verb GO triggers node.event_callback()
-	//verb LOOK returns an array of possible doors
 	case PVERB_LOOK:
-		return mazeListDoors(node)
+		return mazeListDoors(node), node
+
+	case PVERB_MOVE:
+		door_num,err := strconv.Atoi(pverb.Parameter)
+		checkErr("Unable to parse door number", err) //TODO this is recoverable
+		if door_num >= len(node.doors) || door_num < 0 {
+			return []string{"ERROR:BAD DOOR NUMBER"}, node
+		}
+		node = node.doors[door_num]
+		if node.event_callback != nil {
+			message,_ := node.event_callback()
+			// TODO do something with game over
+			return []string{message}, node
+		}
+		return []string{"OK"}, node
+	
 	default:
-		return []string{"OK:PLAYERVERBS:Not implemented"}
+		return []string{"OK:PLAYERVERBS:Not implemented"}, node
 	}
-	return []string{"FAIL:UNKNOWNPLAYERVERB"}
+	return []string{"FAIL:UNKNOWNPLAYERVERB"}, node
 }
 
 // Gets all the appropriate data from the client and returns a status message
-func doReading(conn io.ReadWriteCloser, node *mazeNode) (string,bool) {
+func doReading(conn io.ReadWriteCloser, node *mazeNode) (string,bool,*mazeNode) {
 	// by definition, we expect a simple header defined as:
 	header := make([]byte, 2) // [0] = verb type, [1] = ENCODED verb size
 	_,err := conn.Read(header)
@@ -90,31 +105,32 @@ func doReading(conn io.ReadWriteCloser, node *mazeNode) (string,bool) {
 	checkErr("Unable to read data:", err)
 	
 	// if there was no more data to accept, we're done
-	if num_bytes == 0 { return "",true }
+	if num_bytes == 0 { return "",true,node }
 	
 	switch header[0] {
 	case PVERB:
 		pverb := new(PlayerVerb)
 		err := json.Unmarshal(raw_json, &pverb)
 		checkErr("Unable to decode PlayerVerb:", err)
-		response := handlePlayerVerb(pverb, node)
+		response,node := handlePlayerVerb(pverb, node)
 		response_json,err := json.Marshal(&response)
 		checkErr("Unable to encode response:", err)
-		return string(response_json),false
+		return string(response_json),false,node
 		
 	case SVERB:
 		sverb := new(ServerVerb)
 		err := json.Unmarshal(raw_json, &sverb)
 		checkErr("Unable to decode ServerVerb:", err)
-		return handleServerVerb(sverb)
+		response,flag := handleServerVerb(sverb)
+		return response,flag,node
 		
 	case UVERB:
 		uverb := new(UserVerb)
 			err := json.Unmarshal(raw_json, &uverb)
 		checkErr("Unable to decode ServerVerb:", err)
-		return handleUserVerb(uverb),false
+		return handleUserVerb(uverb),false,node
 	}
-	return "FAIL:UNKNOWNVERB",false
+	return "FAIL:UNKNOWNVERB",false,node
 	
 }
 

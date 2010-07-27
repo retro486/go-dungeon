@@ -2,8 +2,8 @@
 #
 # targets: director, client-look, client-move
 #
-GOC = 6g # the go compiler to use; typically 6g on 64-bit systems and 8g on 32-bit systems.
-GOL = 6l # the go linker to use; typically 6l on 64-bit systems and 8l on 32-bit systems.
+include $(GOROOT)/src/Make.$(GOARCH)
+
 GOCFLAGS = # extra flags to pass to the go compiler
 GOLFLAGS = # extra flags to pass to the go linker
 
@@ -15,24 +15,24 @@ CLIENTMOVEREQS = client-move.go $(COMMONREQS)
 all :
 	@echo "Valid make targets are: director, client-look, client-move"
 
-director : director-core.6
-	$(GOL) $(GOLFLAGS) -o director director-core.6
+director : director-core.$(O)
+	$(LD) $(GOLFLAGS) -o director director-core.$(O)
 	
-director-core.6 : $(DIRECTORREQS)
-	$(GOC) $(GOCFLAGS) $(DIRECTORREQS)
+director-core.$(O) : $(DIRECTORREQS)
+	$(GC) $(GOCFLAGS) $(DIRECTORREQS)
 
-client-look : client-look.6
-	$(GOL) $(GOLFLAGS) -o client-look client-look.6
+client-look : client-look.$(O)
+	$(LD) $(GOLFLAGS) -o client-look client-look.$(O)
 	
-client-look.6 : $(CLIENTLOOKREQS)
-	$(GOC) $(GOCFLAGS) $(CLIENTLOOKREQS)
+client-look.$(O) : $(CLIENTLOOKREQS)
+	$(GC) $(GOCFLAGS) $(CLIENTLOOKREQS)
 
-client-move : client-move.6
-	$(GOL) $(GOLFLAGS) -o client-move client-move.6
+client-move : client-move.$(O)
+	$(LD) $(GOLFLAGS) -o client-move client-move.$(O)
 	
-client-move.6 : $(CLIENTMOVEREQS)
-	$(GOC) $(GOCFLAGS) $(CLIENTMOVEREQS)
+client-move.$(O) : $(CLIENTMOVEREQS)
+	$(GC) $(GOCFLAGS) $(CLIENTMOVEREQS)
 
 clean :
-	rm -rf *.6
+	rm -rf *.$(O)
 	rm -f director client-look client-move

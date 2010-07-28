@@ -13,3 +13,15 @@ func onExit() (string,bool) {
 	return "You've escaped the dungeon!",true
 }
 
+func onBattle() (string,bool) {
+	return "You encountered a mob.",false
+}
+
+func onTrap() (string,bool) {
+	return "You encountered a trap.",false
+}
+
+func onLuck() (string,bool) {
+	return "You had good luck.",false
+}
+

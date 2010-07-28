@@ -10,6 +10,7 @@ import (
 	"os"
 	"rand"
 	"time" // for Nanoseconds
+	"fmt" // for printing progress indicators on the director side
 )
 
 const (
@@ -17,14 +18,18 @@ const (
 	MAZE_MAX_DOORS = 5
 	MAZE_MAX_DEPTH = 9
 	
-	// maze event types
-	MT_BATTLE = iota
-	MT_TREASURE
-	MT_TRAP
-	MT_EXIT
+	// chance modifiers; the higher the number, the bigger the chance. Keep it below 100.
+	MAZE_CHANCE_BATTLE = 75 // 75% chance
+	MAZE_CHANCE_LUCK = 10
+	MAZE_CHANCE_TRAP = 40
+	MAZE_CHANCE_TYPES = 3 // how many types of events are there (other than enter/exit)
+	
+	MCT_BATTLE = 0
+	MCT_LUCK = 1
+	MCT_TRAP = 2
 	
 	// face directions
-	FD_NORTH
+	FD_NORTH = iota
 	FD_SOUTH
 	FD_EAST
 	FD_WEST
@@ -34,7 +39,6 @@ const (
 type mazeNode struct {
 	event_callback func() (string,bool)
 	doors []*mazeNode
-	parent *mazeNode // for more intuitive reference; no real reason it couldn't be doors[0].
 	name string
 	event_ran bool
 }
@@ -80,12 +84,15 @@ func createDoor(node *mazeNode) (*mazeNode,os.Error) {
 	}
 	
 	// reallocate doors array and append a new node
-	new_slice := make([]*mazeNode, (size+1))
+	new_slice := make([]*mazeNode, (size+1), MAZE_MAX_DOORS)
 	copy(new_slice, node.doors)
 	node.doors = new_slice
 	node.doors[size] = new(mazeNode)
-	node.doors[size].parent = node
-	return node.doors[size],nil
+	parent := node
+	node = node.doors[size]
+	node.doors = make([]*mazeNode, 1, MAZE_MAX_DOORS)
+	node.doors[0] = parent
+	return node,nil
 }
 
 func mazeGenerateRandomName() string {
@@ -112,15 +119,17 @@ func mazeGenerateExitPath() *mazeNode {
 }
 
 func mazeGenerateExtraPaths(enter *mazeNode, curr_level int) {
-	// don't generate past MAZE_MAX_DEPTH levels
-	if curr_level == MAZE_MAX_DEPTH { return }
+	if curr_level == MAZE_MAX_DEPTH	|| len(enter.doors) == MAZE_MAX_DOORS {
+		return
+	}
 	
 	// add doors if there's room
 	for i := len(enter.doors); i < MAZE_MAX_DOORS; i++ {
-		if randomNumber(2) == 1 {
+		if randomNumber(2) == 1 { // 50% chance to add a door or not
 			new_door,err := createDoor(enter)
 			checkErr("Unable to add a door:", err)
 			new_door.name = mazeGenerateRandomName()
+			fmt.Print(".") // gives an idea of progress
 		}
 	}
 	
@@ -145,23 +154,37 @@ func randomNumberBetween(low uint32, high uint32) uint32 {
 	return num
 }
 
-// scrambles the given string array of doors; if skip_first is set, it won't scramble the
-// first door (i.e., to ensure the first door is always "go to previous room")
-func mixMenuItems(menu []string, skip_first bool) []string {
-	max_len := len(menu)
+func mazeGenerateRandomEncounters(node *mazeNode) {
+	if len(node.doors) == 1 { return } // node.doors will AT LEAST have one element for parent
 
-	for i := 0; i < max_len; i++ {
-		rand_index := int(randomNumberBetween(uint32(i), uint32(max_len)))
-		// TODO this isn't working or something...
-		if skip_first && (i == 0 || rand_index == 0) {
-			continue
-		} else {
-			temp := menu[i]
-			menu[i] = menu[rand_index]
-			menu[rand_index] = temp
+	// start the index at [1] since [0] == parent and would infinite-loop this function.
+	for i := 1; i < len(node.doors); i++ {
+		door := node.doors[i]
+		door.event_ran = false // init the event_ran flag
+		event_type := randomNumber(MAZE_CHANCE_TYPES)
+		chance := randomNumber(100)
+		switch event_type {
+		case MCT_BATTLE:
+			if chance <= MAZE_CHANCE_BATTLE { // arbitrarily pick a value to be "true"
+				door.event_callback = onBattle
+			}
+			break
+		case MCT_LUCK:
+			if chance <= MAZE_CHANCE_LUCK {
+				door.event_callback = onLuck
+			}
+			break
+		case MCT_TRAP:
+			if chance <= MAZE_CHANCE_TRAP {
+				door.event_callback = onTrap
+			}
+			break
+		default: // no event -- honestly this should never be the case at this point.
+			fmt.Println("Bad random: ", event_type) // DEBUG
+			break
 		}
+		fmt.Print(".") // progress indicator
+		mazeGenerateRandomEncounters(door) // recurse into this door
 	}
-	
-	return menu
 }
 

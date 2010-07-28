@@ -31,18 +31,21 @@ func main() {
 		checkErr("Unable to bind:", err)
 		defer server.Close()
 		
-		fmt.Println("Generating dungeon...")
+		fmt.Print("Generating dungeon")
 		node := mazeGenerateExitPath()
+		node.name = "Entrance"
 		mazeGenerateExtraPaths(node, 0)
-		
+		fmt.Println(".") // terminate progress indicator
+			
 		if *rand_enc_on_roll {
 			fmt.Println("Random encounters to be generated on each roll; " +
 				"skipping...")
 		} else {
-			fmt.Println("Generating random encounters...")
-			//TODO
+			fmt.Print("Generating random encounters")
+			mazeGenerateRandomEncounters(node)
 		}
-		
+		fmt.Println(".") // terminate progress indicator
+				
 		var conn net.Conn
 		fmt.Println("Ready!")
 		

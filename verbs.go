@@ -73,16 +73,7 @@ func handlePlayerVerb(pverb *PlayerVerb, node *mazeNode) ([]string,*mazeNode) {
 	case PVERB_MOVE:
 		door_num,err := strconv.Atoi(pverb.Parameter)
 		checkErr("Unable to parse door number", err) //TODO this is recoverable
-		if door_num >= len(node.doors) || door_num < 0 {
-			return []string{"ERROR:BAD DOOR NUMBER"}, node
-		}
-		node = node.doors[door_num]
-		if node.event_callback != nil {
-			message,_ := node.event_callback()
-			// TODO do something with game over
-			return []string{message}, node
-		}
-		return []string{"OK"}, node
+		return mazeEnterDoor(node, door_num)
 	
 	default:
 		return []string{"OK:PLAYERVERBS:Not implemented"}, node

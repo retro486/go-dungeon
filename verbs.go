@@ -9,15 +9,15 @@ import (
 // Various general verbs; be sure to test what verb type is stored as not all
 // the parameters are used in all verbs!
 type PlayerVerb struct {
-	Verb uint8
+	Verb int
 	Parameter string
 }
 type UserVerb struct {
-	Verb,Agility,Intelligence,Strength uint8
+	Verb,Agility,Intelligence,Strength int
 	Name string
 }
 type ServerVerb struct {
-	Verb uint8
+	Verb int
 	Parameter string
 }
 
@@ -33,6 +33,7 @@ const (
 	PVERB_ATTACK
 	PVERB_EQUIP
 	PVERB_UNEQUIP
+	PVERB_DROP
 	PVERB_LOOT
 	
 	// server command verbs
@@ -64,7 +65,6 @@ func handleUserVerb(uverb *UserVerb) string {
 	return "FAIL:UNKNOWNUSERVERB"
 }
 
-//TODO require the ADDRESS of the node pointer so that changes to the node can be done.
 func handlePlayerVerb(pverb *PlayerVerb, node *mazeNode) ([]string,*mazeNode) {
 	switch pverb.Verb {
 	case PVERB_LOOK:
@@ -74,6 +74,14 @@ func handlePlayerVerb(pverb *PlayerVerb, node *mazeNode) ([]string,*mazeNode) {
 		door_num,err := strconv.Atoi(pverb.Parameter)
 		checkErr("Unable to parse door number", err) //TODO this is recoverable
 		return mazeEnterDoor(node, door_num)
+	
+	case PVERB_EQUIP:
+	case PVERB_UNEQUIP:
+	case PVERB_DROP:
+	case PVERB_ATTACK:
+	case PVERB_LOOT:
+		str,node,backpack = loot(node,backpack)
+		return str,node
 	
 	default:
 		return []string{"OK:PLAYERVERBS:Not implemented"}, node

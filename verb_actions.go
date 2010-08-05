@@ -60,3 +60,11 @@ func mazeEnterDoor(node *mazeNode, door_num int) ([]string,*mazeNode) {
 	return []string{"OK"},node
 }
 
+func loot(node *mazeNode, backpack []InventoryItem) ([]string,*mazeNode,
+	[]InventoryItem) {
+	// TODO assumes there's nothing to loot by default:
+	// nothing was lootable, add some dirt to player's inventory
+	return "You looted some dirt because that's all what was available, you " + 
+		"clepto.",node,backpack
+}
+

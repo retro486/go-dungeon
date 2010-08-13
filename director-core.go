@@ -4,6 +4,7 @@ import (
 	"flag"
 	"net"
 	"fmt"
+	"os"
 )
 
 var (
@@ -21,11 +22,13 @@ func main() {
 	var node *mazeNode
 	var backback [20]InventoryItem // backpack can hold up to 20 items
 	
+	
+	
 	flag.Parse()
 
 	if *safe_mode && (*bind_to != "localhost:7000" || *rand_enc_on_roll) {
-		checkErr("", os.NewError("Can't specify safe mode AND set a binding "
-			+ " or specify random encounters."))
+		checkErr("", os.NewError("Can't specify safe mode AND set a binding " +
+			" or specify random encounters."))
 	}
 	
 	fmt.Println("Starting up...")

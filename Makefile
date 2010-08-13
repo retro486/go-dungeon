@@ -7,7 +7,7 @@ include $(GOROOT)/src/Make.$(GOARCH)
 GOCFLAGS = # extra flags to pass to the go compiler
 GOLFLAGS = # extra flags to pass to the go linker
 
-COMMONREQS = helpfuls.go maze.go events.go verbs.go verb_actions.go
+COMMONREQS = helpfuls.go maze.go events.go verbs.go verb_actions.go structures.go
 DIRECTORREQS = director-core.go $(COMMONREQS)
 CLIENTLOOKREQS = client-look.go  $(COMMONREQS)
 CLIENTMOVEREQS = client-move.go $(COMMONREQS)

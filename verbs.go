@@ -80,7 +80,7 @@ func handlePlayerVerb(pverb *PlayerVerb, node *mazeNode) ([]string,*mazeNode) {
 	case PVERB_DROP:
 	case PVERB_ATTACK:
 	case PVERB_LOOT:
-		str,node,backpack = loot(node,backpack)
+		str,node,backpack := loot(node,backpack)
 		return str,node
 	
 	default:

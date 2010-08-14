@@ -20,9 +20,7 @@ func main() {
 	var response string
 	var eot bool
 	var node *mazeNode
-	var backback [20]InventoryItem // backpack can hold up to 20 items
-	
-	
+	var player *Player
 	
 	flag.Parse()
 
@@ -53,13 +51,19 @@ func main() {
 	checkErr("Unable to bind:", err)
 	defer server.Close()
 	
+	// assemble a player
+	player = new(Player)
+	player.inventory = make([]InventoryItem, 20) // max 20 items
+	player.weapons = make([]Weapon, 2) // max two weapons
+	player.armor = make([]Armor, 5) // head, feet, legs, chest, hands
+	player.position = node
+	
 	conn, err = server.Accept()
 	checkErr("Problem accepting:", err)
 	fmt.Println("Ready!")
 	for {
-		response,eot,node = doReading(conn,node)
+		response,eot,node = doReading(conn,player)
 		// if transmission has not yet ended
-		_ = node // stop go from stupidly complaining that node is never used.
 		if !eot {
 			fmt.Println(response)
 			// send response to client

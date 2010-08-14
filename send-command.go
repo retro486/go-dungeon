@@ -1,3 +1,8 @@
+/*
+Communication tool for sending commands to the director. Things like user
+management and game management, i.e. regenerate the maze or somesuch. Currently
+this tool does absolutely nothing; more of a place-holder.
+*/
 package main
 
 import (
@@ -26,7 +31,7 @@ func validateUserName(username string) (bool,string) {
 	return true,matched[0]
 }
 
-func processUserVerb(conn io.ReadWriteCloser, args []string, verb uint8) string {
+func processUserVerb(conn io.ReadWriteCloser, args []string, verb int) string {
 	is_valid,username := validateUserName(args[1])
 	if !is_valid { return username }
 	
@@ -40,25 +45,6 @@ func processUserVerb(conn io.ReadWriteCloser, args []string, verb uint8) string 
 	checkErr("Unable to encode data:", err)
 	
 	return sendJSON(conn, json_data, UVERB)
-}
-
-func sendJSON(conn io.ReadWriteCloser, json_data []byte, verb_type uint8) string {
-	// send the two header bytes
-	header := []byte{verb_type, uint8(len(json_data))} // len(json_data) MUST < 128
-	_,err := conn.Write(header)
-	checkErr("Unable to send header:", err)
-	
-	// send the actual json-encoded data
-	_,err = conn.Write(json_data)
-	checkErr("Unable to send data:", err)
-	
-	// wait for a response from the server
-	fmt.Println("Waiting for response from director...")
-	response := make([]byte, 255)
-	_,err = conn.Read(response)
-	checkErr("Unable to read response:", err)
-	
-	return string(response)
 }
 
 func parseArgs(args []string) string {

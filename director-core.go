@@ -19,7 +19,7 @@ func main() {
 	var conn net.Conn
 	var response string
 	var eot bool
-	var node *mazeNode
+	var maze *[]mazeCell
 	var player *Player
 	
 	flag.Parse()
@@ -32,9 +32,8 @@ func main() {
 	fmt.Println("Starting up...")
 	
 	fmt.Print("Generating dungeon")
-	node = mazeGenerateExitPath()
-	node.name = "Entrance"
-	mazeGenerateExtraPaths(node, 0)
+
+	mazeGenerate(maze)
 	fmt.Println(".") // terminate progress indicator
 	
 	if *rand_enc_on_roll {
@@ -42,7 +41,7 @@ func main() {
 			"skipping")
 	} else {
 		fmt.Print("Generating random encounters")
-		mazeGenerateRandomEncounters(node)
+		//mazeGenerateRandomEncounters(node)
 	}
 	fmt.Println(".") // terminate progress indicator
 
@@ -56,13 +55,13 @@ func main() {
 	player.inventory = make([]InventoryItem, 20) // max 20 items
 	player.weapons = make([]Weapon, 2) // max two weapons
 	player.armor = make([]Armor, 5) // head, feet, legs, chest, hands
-	player.position = node
+	player.position = mazeGetCellAt(0,0,maze)
 	
 	conn, err = server.Accept()
 	checkErr("Problem accepting:", err)
 	fmt.Println("Ready!")
 	for {
-		response,eot,node = doReading(conn,player)
+		//response,eot,node = doReading(conn,player)
 		// if transmission has not yet ended
 		if !eot {
 			fmt.Println(response)

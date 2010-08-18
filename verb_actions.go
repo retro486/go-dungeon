@@ -23,44 +23,7 @@ func mixMenuItems(menu []string, skip_first bool) []string {
 	return menu
 }
 
-func mazeListDoors(node *mazeNode) []string {
-	door_list := new([MAZE_MAX_DOORS]string)
-	
-	index := 0
-	is_entrance := false
-	
-	// unavoidable special case for the entrance node
-	if strings.ToUpper(node.name) != "ENTRANCE" {
-		door_list[index] = "The previous room";
-		index++
-	} else { is_entrance = true }
-	
-	if len(node.doors) > 1 {
-		for index < len(node.doors) {
-			door_list[index] = node.doors[index].name
-			index++
-		}
-	}
-	
-	return mixMenuItems(door_list[0:index], !is_entrance) // DON'T skip first item in mixup if entrance.
-}
-
-func mazeEnterDoor(node *mazeNode, door_num int) ([]string,*mazeNode) {
-	if door_num >= len(node.doors) || door_num < 0 {
-		return []string{"ERROR:BAD DOOR NUMBER"}, node
-	}
-	
-	node = node.doors[door_num]
-	if node.event_callback != nil && node.event_ran == false {
-		message,_ := node.event_callback()
-		node.event_ran = true
-		// TODO do something with game over
-		return []string{message}, node
-	}
-	return []string{"OK"},node
-}
-
-func loot(node *mazeNode, backpack []InventoryItem) ([]string,*mazeNode,
+func loot(node *mazeCell, backpack []InventoryItem) ([]string,*mazeCell,
 	[]InventoryItem) {
 	// TODO assumes there's nothing to loot by default:
 	// nothing was lootable, add some dirt to player's inventory

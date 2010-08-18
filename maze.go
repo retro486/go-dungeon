@@ -7,138 +7,112 @@ covered and the only to return to a previously explored area is to backtrack.
 package main
 
 import (
-	"os"
 	"rand"
 	"time" // for Nanoseconds
 	"fmt" // for printing progress indicators on the director side
 )
 
 const (
-	//maybe randomly generated in the future to further randomize the maze
-	MAZE_MAX_DOORS = 5
-	MAZE_MAX_DEPTH = 9
+	MAZE_COLS = 10
+	MAZE_ROWS = 10
 	
-	// chance modifiers; the higher the number, the bigger the chance. Keep it below 100.
-	MAZE_CHANCE_BATTLE = 75 // 75% chance
+	// chance modifiers; the higher the number, the bigger the chance.
+	// Keep it below 100.
+	MAZE_CHANCE_BATTLE = 85
 	MAZE_CHANCE_LUCK = 10
-	MAZE_CHANCE_TRAP = 40
-	MAZE_CHANCE_TYPES = 3 // how many types of events are there (other than enter/exit)
+	MAZE_CHANCE_TRAP = 50
 	
+	// for the randomizer for picking which event to put
+	MAZE_CHANCE_TYPES = 3
 	MCT_BATTLE = 0
 	MCT_LUCK = 1
 	MCT_TRAP = 2
-	
-	// face directions
-	FD_NORTH = iota
-	FD_SOUTH
-	FD_EAST
-	FD_WEST
-	FD_NONE // for marking an "empty" direction
 )
 
-type mazeNode struct {
+type mazeCell struct {
+	// caveat: can only have one kind of event per cell
 	event_callback func() (string,bool)
-	doors []*mazeNode
-	name string
-	event_ran bool
+	event_ran, gen_visited, is_wall bool
+	north, south, east, west *mazeCell
 }
 
-
-func mazeGetColor() string {
-	colors := []string {
-		"green",
-		"blue",
-		"red",
-		"brown",
-		"black",
-		"orange",
-	}
-	
-	return colors[randomNumber(uint32(len(colors)))]
+func mazeGetCellAt(x, y int, maze *[]mazeCell) *mazeCell {
+	pos := y + (x*y)
+	return &maze[pos]
 }
 
-func mazeGetTexture() string {
-	textures := []string {
-		"crusty",
-		"scaly",
-		"rusty",
-		"slimy",
-		"ugly",
-		"shiny",
-		"decrepit",
-		"new",
-	}
+func mazeGenerate(maze *[]mazeCell) {
+	var cell *mazeCell
+	maze = make([]mazeCell, (MAZE_ROWS*MAZE_COLS))
 	
-	return textures[randomNumber(uint32(len(textures)))]
-}
-
-// appends a node to the given node and returns the new node
-func createDoor(node *mazeNode) (*mazeNode,os.Error) {
-	if node == nil {
-		return nil,os.NewError("Given node is empty.")
-	}
-	
-	size := len(node.doors)
-	if size == MAZE_MAX_DOORS {
-		return nil,os.NewError("Given node is full.")
-	}
-	
-	// reallocate doors array and append a new node
-	new_slice := make([]*mazeNode, (size+1), MAZE_MAX_DOORS)
-	copy(new_slice, node.doors)
-	node.doors = new_slice
-	node.doors[size] = new(mazeNode)
-	parent := node
-	node = node.doors[size]
-	node.doors = make([]*mazeNode, 1, MAZE_MAX_DOORS)
-	node.doors[0] = parent
-	return node,nil
-}
-
-func mazeGenerateRandomName() string {
-	return (mazeGetTexture() + " " + mazeGetColor() + " door")
-}
-
-func mazeGenerateExitPath() *mazeNode {
-	node := new(mazeNode)
-	node.name = mazeGenerateRandomName()
-	node.event_callback = onEnter
-	
-	var entrance *mazeNode = node
-	var err os.Error = nil
-	
-	for i := 0; i < MAZE_MAX_DEPTH; i++ {
-		node,err = createDoor(node)
-		checkErr("Unable to add a door:", err)
-		node.name = mazeGenerateRandomName()
-	}
-	
-	node.event_callback = onExit
-	
-	return entrance
-}
-
-func mazeGenerateExtraPaths(enter *mazeNode, curr_level int) {
-	if curr_level == MAZE_MAX_DEPTH	|| len(enter.doors) == MAZE_MAX_DOORS {
-		return
-	}
-	
-	// add doors if there's room
-	for i := len(enter.doors); i < MAZE_MAX_DOORS; i++ {
-		if randomNumber(2) == 1 { // 50% chance to add a door or not
-			new_door,err := createDoor(enter)
-			checkErr("Unable to add a door:", err)
-			new_door.name = mazeGenerateRandomName()
-			fmt.Print(".") // gives an idea of progress
+	// initialize walls so they're not nil
+	for i:=0; i<MAZE_ROWS; i++ {
+		for j:=0; j<MAZE_COLS; j++ {
+			cell = mazeGetCellAt(j, i, maze)
+			if j == 0 {
+				cell.north.is_wall = true
+			}
+			if i == 0 {
+				cell.west.is_wall = true
+			}
+			if j == MAZE_COLS-1 {
+				cell.east.is_wall = true
+			}
+			if i == MAZE_ROWS-1 {
+				cell.south.is_wall = true
+			}			
 		}
 	}
 	
-	// enter each door and add doors from there
-	for i := 0; i < len(enter.doors); i++ {
-		mazeGenerateExtraPaths(enter.doors[i], curr_level+1)
+	current := &maze[0]
+	curr_row := 0; curr_col := 0
+	for visited := 1; visited < (MAZE_ROWS*MAZE_COLS); {
+		fmt.Print(".")
+		switch(randomNumber(4)) {
+			case 0: if current.north == nil || !current.north.gen_visited {
+				if current.north != nil && current.north.is_wall { continue }
+				current.gen_visited = true
+				current.north = mazeGetCellAt(curr_row-1, curr_col, maze)
+				current = current.north
+				curr_row--; visited++
+				break
+			} else {
+				continue
+			}
+			case 1: if current.east == nil || !current.east.gen_visited {
+				if current.east != nil && current.east.is_wall { continue }
+				current.gen_visited = true
+				current.east = mazeGetCellAt(curr_row, curr_col+1, maze)
+				current = current.east
+				curr_col++; visited++
+				break;
+			} else {
+				continue
+			}
+			case 2: if current.south == nil || !current.south.gen_visited {
+				if current.south != nil && current.south.is_wall { continue }
+				current.gen_visited = true
+				current.south = mazeGetCellAt(curr_row+1, curr_col, maze)
+				current = current.south
+				curr_row++; visited++
+				break;
+			} else {
+				continue
+			}
+			case 3: if current.west == nil || !current.west.gen_visited {
+				if current.west != nil && current.west.is_wall { continue }
+				current.gen_visited = true
+				current.west = mazeGetCellAt(curr_row-1, curr_col, maze)
+				current = current.west
+				curr_col--; visited++
+				break;
+			} else {
+				continue
+			}
+		}
 	}
-	
-	return
+	// maze now contains a valid maze with entry at (0,0) and some random exit
+	return maze
 }
 
 // generates a random number between 0 and max_range-1
@@ -154,37 +128,31 @@ func randomNumberBetween(low uint32, high uint32) uint32 {
 	return num
 }
 
-func mazeGenerateRandomEncounters(node *mazeNode) {
-	if len(node.doors) == 1 { return } // node.doors will AT LEAST have one element for parent
-
-	// start the index at [1] since [0] == parent and would infinite-loop this function.
-	for i := 1; i < len(node.doors); i++ {
-		door := node.doors[i]
-		door.event_ran = false // init the event_ran flag
-		event_type := randomNumber(MAZE_CHANCE_TYPES)
-		chance := randomNumber(100)
-		switch event_type {
-		case MCT_BATTLE:
-			if chance <= MAZE_CHANCE_BATTLE { // arbitrarily pick a value to be "true"
-				door.event_callback = onBattle
-			}
-			break
-		case MCT_LUCK:
-			if chance <= MAZE_CHANCE_LUCK {
-				door.event_callback = onLuck
-			}
-			break
-		case MCT_TRAP:
-			if chance <= MAZE_CHANCE_TRAP {
-				door.event_callback = onTrap
-			}
-			break
-		default: // no event -- honestly this should never be the case at this point.
-			fmt.Println("Bad random: ", event_type) // DEBUG
-			break
+// generates an event for the given maze cell
+func mazeGenerateRandomEncounters(cell *mazeCell) {
+	cell.event_ran = false // init the event_ran flag
+	event_type := randomNumber(MAZE_CHANCE_TYPES)
+	chance := randomNumber(100)
+	switch event_type {
+	case MCT_BATTLE:
+		if chance <= MAZE_CHANCE_BATTLE { // arbitrarily pick a value to be "true"
+			cell.event_callback = onBattle
 		}
-		fmt.Print(".") // progress indicator
-		mazeGenerateRandomEncounters(door) // recurse into this door
+		break
+	case MCT_LUCK:
+		if chance <= MAZE_CHANCE_LUCK {
+			cell.event_callback = onLuck
+		}
+		break
+	case MCT_TRAP:
+		if chance <= MAZE_CHANCE_TRAP {
+			cell.event_callback = onTrap
+		}
+		break
+	default: // no event -- honestly this should never be the case at this point.
+		fmt.Println("Bad random: ", event_type) // DEBUG
+		break
 	}
+	fmt.Print(".") // progress indicator
 }
 

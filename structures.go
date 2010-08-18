@@ -40,7 +40,7 @@ type Creature struct {
 	inventory []InventoryItem
 	weapons []Weapon
 	armor []Armor
-	position *mazeNode
+	position *mazeCell
 }
 
 type Player struct {

@@ -51,4 +51,4 @@ send-command.$(O) : $(DIRECTORCOMMREQS)
 
 clean :
 	rm -rf *.$(O)
-	rm -f director look move show-message director-command
+	rm -f director look move show-message director-command *~

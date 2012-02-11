@@ -1,3 +1,5 @@
+Migrated from Google Code on 2/11/2012.
+
 = TODO =
   * Do a better job in show-message rather than buffer monkeying
   * Shuffle menu should also reorder the doors array so they actually match properly
